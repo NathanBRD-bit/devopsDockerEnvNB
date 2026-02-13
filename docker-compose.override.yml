@@ -1,0 +1,20 @@
+services:
+  task-api:
+    build:
+      target: development
+    volumes:
+      - ./tasks-service/src:/app/src
+
+  stats-api:
+    build:
+      target: development
+    volumes:
+      - ./stats-service/src:/app/src
+
+  frontend:
+    build:
+      target: development
+    volumes:
+      - ./frontend/src:/app/src
+    ports:
+      - "5173:5173"

@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+vars:
+  SERVICES: tasks-service stats-service frontend
+  NODE_SERVICES: tasks-service stats-service
+
+tasks:
+  default:
+    desc: Affiche les tâches disponibles
+    cmds:
+      - task --list
+    silent: true
+
+    # Installer soit comme ça mais ce n'est pas simultané, le mieux ici comme il n'y a que 3 services,
+    # c'est de faire 3 petit install et un global qui dépend des autres
+#  install:
+#    desc: Installe les dépendances de tous les services
+#    cmds:
+#      - echo "Installation des dépendances..."
+#      - cd tasks-service && npm i
+#      - cd stats-service && npm i
+#      - cd frontend && npm i
+#      - echo "Dépendances installés"
+
+    # Quand beaucoup de services, installer via boucle for, pas simultané
+  install:
+    desc: Installe les dépendances de tous les services
+    cmds:
+      - for: { var: NODE_SERVICES, split: ' ' }
+        cmd: |
+          echo "Installation de {{.ITEM}}..."
+          cd {{.ITEM}} && npm i
+      - echo "Dépendances installés"
+
+  test:
+    desc: Lancement dtases tests des services back
+    deps: [install]
+    cmds:
+      - for: { var: NODE_SERVICES, split: ' ' }
+        cmd: |
+          echo "Lancement des tests pour {{.ITEM}}..."
+          cd {{.ITEM}} && npm run test
+      - echo "Tests terminés"

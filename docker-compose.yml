@@ -1,0 +1,100 @@
+services:
+  postgres-task:
+    image: postgres:18-alpine
+    container_name: postgres-task
+    env_file:
+      - .env
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      PGDATA: /var/lib/postgresql/18/docker
+    volumes:
+      - postgres-task:/var/lib/postgresql
+      - ./tasks-service/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - db-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "8080:80"
+    environment:
+      VITE_TASKS_API_URL: http://localhost:3001/api/tasks
+      VITE_STATS_API_URL: http://localhost:3002/api/stats
+    networks:
+      - frontend-network
+    depends_on:
+      stats-api:
+        condition: service_healthy
+      task-api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:80/" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  task-api:
+    build:
+      context: ./tasks-service
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "${PORT:-3001}:3001"
+    env_file:
+      - ./tasks-service/.env
+    networks:
+      - backend-network
+      - db-network
+    depends_on:
+      postgres-task:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3001/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  stats-api:
+    build:
+      context: ./stats-service
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "${PORT:-3002}:3002"
+    env_file:
+      - ./stats-service/.env
+    networks:
+      - backend-network
+      - frontend-network
+    depends_on:
+      task-api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3002/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+networks:
+  backend-network:
+    driver: bridge
+  db-network:
+    driver: bridge
+  frontend-network:
+    driver: bridge
+
+volumes:
+  postgres-task:
