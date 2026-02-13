@@ -1,5 +1,5 @@
 services:
-  task-api:
+  tasks-api:
     build:
       target: development
     volumes:

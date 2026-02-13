@@ -1,0 +1,15 @@
+services:
+  tasks-api:
+    build:
+      target: test
+    image: tasks-api:test
+
+  stats-api:
+    build:
+      target: test
+    image: stats-api:test
+
+  frontend:
+    build:
+      target: test
+    image: frontend:test

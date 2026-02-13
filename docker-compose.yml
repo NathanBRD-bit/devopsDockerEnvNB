@@ -25,6 +25,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: production
+    image: frontend:latest
     ports:
       - "8080:80"
     environment:
@@ -35,7 +36,7 @@ services:
     depends_on:
       stats-api:
         condition: service_healthy
-      task-api:
+      tasks-api:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
@@ -44,11 +45,12 @@ services:
       timeout: 5s
       retries: 3
 
-  task-api:
+  tasks-api:
     build:
       context: ./tasks-service
       dockerfile: Dockerfile
       target: production
+    image: tasks-api:latest
     ports:
       - "${PORT:-3001}:3001"
     env_file:
@@ -71,6 +73,7 @@ services:
       context: ./stats-service
       dockerfile: Dockerfile
       target: production
+    image: stats-api:latest
     ports:
       - "${PORT:-3002}:3002"
     env_file:
@@ -79,7 +82,7 @@ services:
       - backend-network
       - frontend-network
     depends_on:
-      task-api:
+      tasks-api:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:

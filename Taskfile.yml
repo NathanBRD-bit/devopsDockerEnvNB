@@ -27,6 +27,7 @@ tasks:
     # Quand beaucoup de services, installer via boucle for, pas simultané
   install:
     desc: Installe les dépendances de tous les services
+    deps: [clean]
     cmds:
       - for: { var: NODE_SERVICES, split: ' ' }
         cmd: |
@@ -43,3 +44,17 @@ tasks:
           echo "Lancement des tests pour {{.ITEM}}..."
           cd {{.ITEM}} && npm run test
       - echo "Tests terminés"
+
+  clean:
+    desc: Nettoie les dossiers node_modules et dist
+    cmds:
+      - for: { var: NODE_SERVICES, split: ' ' }
+        cmd: |
+          echo "Lancement du clean pour {{.ITEM}}..."
+          rm -rf {{.ITEM}}/node_modules  {{.ITEM}}/dist
+      - echo "Clean terminé"
+
+  build:compose:
+    desc: Build les images avec docker compose
+    cmds:
+      - docker compose build
