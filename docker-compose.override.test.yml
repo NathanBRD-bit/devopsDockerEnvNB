@@ -1,13 +1,13 @@
 services:
-  tasks-api:
+  tasks-service:
     build:
       target: test
-    image: tasks-api:test
+    image: tasks-service:test
 
-  stats-api:
+  stats-service:
     build:
       target: test
-    image: stats-api:test
+    image: stats-service:test
 
   frontend:
     build:

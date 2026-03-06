@@ -1,11 +1,11 @@
 services:
-  tasks-api:
+  tasks-service:
     build:
       target: development
     volumes:
       - ./tasks-service/src:/app/src
 
-  stats-api:
+  stats-service:
     build:
       target: development
     volumes:

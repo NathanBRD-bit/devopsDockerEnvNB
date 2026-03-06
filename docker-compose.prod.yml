@@ -1,0 +1,43 @@
+services:
+  postgres-task:
+    ports:
+      - "5432"
+
+  frontend:
+    image : localhost:5000/frontend:latest
+    ports:
+      - "80"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  tasks-service:
+    image : localhost:5000/tasks-service:latest
+    ports:
+      - "3001"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  stats-service:
+    image : localhost:5000/stats-service:latest
+    ports:
+      - "3002"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M

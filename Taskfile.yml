@@ -5,6 +5,10 @@ version: '3'
 vars:
   SERVICES: tasks-service stats-service frontend
   NODE_SERVICES: tasks-service stats-service
+  REGISTRY: localhost:5000
+  DOCKER_TAG: latest
+
+dotenv: ['.env']
 
 tasks:
   default:
@@ -24,6 +28,15 @@ tasks:
 #      - cd frontend && npm i
 #      - echo "Dépendances installés"
 
+
+  bump:
+    cmds:
+      - |
+        v=$(grep VERSION .env | cut -d '=' -f2)
+        v=$((v+1))
+        echo "VERSION=$v" > .env
+        echo "Nouvelle version: $v"
+
     # Quand beaucoup de services, installer via boucle for, pas simultané
   install:
     desc: Installe les dépendances de tous les services
@@ -36,7 +49,7 @@ tasks:
       - echo "Dépendances installés"
 
   test:
-    desc: Lancement dtases tests des services back
+    desc: Lancement des tests des services back
     deps: [install]
     cmds:
       - for: { var: NODE_SERVICES, split: ' ' }
@@ -55,6 +68,42 @@ tasks:
       - echo "Clean terminé"
 
   build:compose:
-    desc: Build les images avec docker compose
+    desc: Build les images de prod avec docker compose (pas l'override)
+    deps: [bump]
     cmds:
-      - docker compose build
+      - docker compose -f docker-compose.prod.yml build --parallel
+
+  build:compose:service:
+  desc: Build un service spécifique avec docker compose
+  deps: [bump]
+  cmds:
+    - echo "Build de {{.CLI_ARGS}}..."
+    - docker compose build {{.CLI_ARGS}}
+
+  test:services:
+    desc: Tester un service spécifique
+    cmds:
+      - echo "Test de {{.CLI_ARGS}}..."
+      - cd {{.CLI_ARGS}} && npm test
+
+  tag:
+    deps: [build:compose]
+    desc: Tag un service
+    cmds :
+      - for: { var: SERVICES, split: ' ' }
+        cmd: |
+          echo "Tag de {{.ITEM}}..."
+          docker tag {{.ITEM}}:{{.VERSION}} {{.REGISTRY}}/{{.ITEM}}:{{.VERSION}}
+          docker tag {{.ITEM}}:{{.VERSION}} {{.REGISTRY}}/{{.ITEM}}:{{.DOCKER_TAG}}
+      - echo "Tags terminés"
+
+  push:
+    deps: [tag]
+    desc: Push un service sur le registry
+    cmds:
+      - for: { var: SERVICES, split: ' ' }
+        cmd: |
+          echo "Push de {{.ITEM}}..."
+          docker push {{.REGISTRY}}/{{.ITEM}}:{{.VERSION}}
+          docker push {{.REGISTRY}}/{{.ITEM}}:{{.DOCKER_TAG}}
+      - echo "Pushs terminés"
